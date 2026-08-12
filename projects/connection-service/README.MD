@@ -212,4 +212,4 @@ export class AppComponent {
 
 ## License
 
-[MIT License](https://github.com/yildiraymeric/ngx-connection-service/blob/master/LICENSE) © M. Yıldıray Meriç & Balram Chavan (orginal work)
+[MIT License](https://github.com/argela-uxui/ngx-connection-service/blob/master/LICENSE) © M. Yıldıray Meriç & Balram Chavan (orginal work)
