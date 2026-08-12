@@ -10,6 +10,10 @@ This library is a fork of https://github.com/ultrasonicsoft/ng-connection-servic
 npm i ngx-connection-service --save
 ```
 
+## Server-Side Rendering (SSR)
+
+No extra dependencies are required for Angular Universal / SSR. On the server, the service uses a Window stub with `navigator.onLine = true` and logs a console warning. Online/offline DOM events are only active in the browser after hydration.
+
 ## Angular Version Compatibility
 
 Please use following table to determine suitable library version for your Angular project.
@@ -210,7 +214,8 @@ export class AppComponent {
 ## Changes
 
 - This version use https://api.ipify.org/ to determine Internet connection status
+- Removed dependency to "ssr-window" package
 
 ## License
 
-[MIT License](https://github.com/yildiraymeric/ngx-connection-service/blob/master/LICENSE) © M. Yıldıray Meriç & Balram Chavan (orginal work)
+[MIT License](https://github.com/argela-uxui/ngx-connection-service/blob/master/LICENSE) © M. Yıldıray Meriç & Balram Chavan (orginal work)
