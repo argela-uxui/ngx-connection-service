@@ -1,10 +1,8 @@
-import {EventEmitter, Inject, Injectable, InjectionToken, OnDestroy, Optional} from '@angular/core';
+import {DOCUMENT, isPlatformBrowser} from '@angular/common';
+import {EventEmitter, Inject, Injectable, InjectionToken, OnDestroy, Optional, PLATFORM_ID} from '@angular/core';
 import {fromEvent, Observable, Subscription, timer} from 'rxjs';
 import {debounceTime, delay, retryWhen, startWith, switchMap, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
-import {getWindow} from 'ssr-window';
-
-const window = getWindow();
 
 /**
  * Instance of this interface is used to report current connection status.
@@ -57,6 +55,37 @@ export interface ConnectionServiceOptions {
  */
 export const ConnectionServiceOptionsToken: InjectionToken<ConnectionServiceOptions> = new InjectionToken('ConnectionServiceOptionsToken');
 
+/**
+ * Minimal Window-like object used when running outside the browser (e.g. Angular Universal SSR).
+ */
+function createWindowStub(): Window {
+  return {
+    navigator: {onLine: true},
+    addEventListener() {
+    },
+    removeEventListener() {
+    },
+  } as unknown as Window;
+}
+
+/**
+ * Resolves the Window object for browser use, or a stub when Window is not available (SSR).
+ */
+function resolveWindow(documentRef: Document, platformId: Object): Window {
+  if (isPlatformBrowser(platformId)) {
+    const win = documentRef.defaultView || (typeof window !== 'undefined' ? window : null);
+    if (win) {
+      return win;
+    }
+  }
+
+  console.warn(
+    'ngx-connection-service: Window is not available (SSR or non-browser environment). ' +
+    'Using a stub with navigator.onLine=true. Online/offline events will not fire until running in the browser.'
+  );
+  return createWindowStub();
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -73,12 +102,13 @@ export class ConnectionService implements OnDestroy {
 
   private currentState: ConnectionState = {
     hasInternetAccess: false,
-    hasNetworkConnection: window.navigator.onLine
+    hasNetworkConnection: true
   };
   private offlineSubscription: Subscription;
   private onlineSubscription: Subscription;
   private httpSubscription: Subscription;
   private serviceOptions: ConnectionServiceOptions;
+  private readonly windowRef: Window;
 
   /**
    * Current ConnectionService options. Notice that changing values of the returned object has not effect on service execution.
@@ -88,7 +118,15 @@ export class ConnectionService implements OnDestroy {
     return {...this.serviceOptions};
   }
 
-  constructor(private http: HttpClient, @Inject(ConnectionServiceOptionsToken) @Optional() options: ConnectionServiceOptions) {
+  constructor(
+    private http: HttpClient,
+    @Inject(DOCUMENT) documentRef: Document,
+    @Inject(PLATFORM_ID) platformId: Object,
+    @Inject(ConnectionServiceOptionsToken) @Optional() options: ConnectionServiceOptions
+  ) {
+    this.windowRef = resolveWindow(documentRef, platformId);
+    this.currentState.hasNetworkConnection = this.windowRef.navigator.onLine;
+
     this.serviceOptions = {
       ...ConnectionService.DEFAULT_OPTIONS,
       heartbeatExecutor: () => this.http.request(
@@ -136,13 +174,13 @@ export class ConnectionService implements OnDestroy {
   }
 
   private checkNetworkState() {
-    this.onlineSubscription = fromEvent(window, 'online').subscribe(() => {
+    this.onlineSubscription = fromEvent(this.windowRef, 'online').subscribe(() => {
       this.currentState.hasNetworkConnection = true;
       this.checkInternetState();
       this.emitEvent();
     });
 
-    this.offlineSubscription = fromEvent(window, 'offline').subscribe(() => {
+    this.offlineSubscription = fromEvent(this.windowRef, 'offline').subscribe(() => {
       this.currentState.hasNetworkConnection = false;
       this.currentState.hasInternetAccess = false;
       this.checkInternetState();
