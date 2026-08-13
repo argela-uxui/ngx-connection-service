@@ -13,6 +13,12 @@
   ],
   "angularCompilerOptions": {
     "compilationMode": "partial",
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    },
     "strictMetadataEmit": true,
     "strictInjectionParameters": true
   }
