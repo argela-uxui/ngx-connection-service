@@ -73,6 +73,18 @@ describe('ConnectionService', () => {
     expect(states[0].hasInternetAccess).toBeFalse();
   });
 
+  it('state signal should reflect the current connection state (dual API with monitor())', fakeAsync(() => {
+    const instance = configureService({enableHeartbeat: false});
+
+    expect(instance.state().hasNetworkConnection).toBeTrue();
+    expect(instance.state().hasInternetAccess).toBeFalse();
+
+    window.dispatchEvent(new Event('offline'));
+    tick(301);
+
+    expect(instance.state()).toEqual({hasNetworkConnection: false, hasInternetAccess: false});
+  }));
+
   it('monitor(false) should not emit current state until a state change occurs', fakeAsync(() => {
     const instance = configureService({enableHeartbeat: false});
     const states: ConnectionState[] = [];

@@ -16,7 +16,7 @@ describe('StatusCheckComponent', () => {
     connectionServiceSpy.monitor.and.returnValue(monitorSubject.asObservable());
 
     TestBed.configureTestingModule({
-      declarations: [StatusCheckComponent],
+      imports: [StatusCheckComponent],
       providers: [
         {provide: ConnectionService, useValue: connectionServiceSpy},
       ],
@@ -40,7 +40,7 @@ describe('StatusCheckComponent', () => {
     tick(301);
     fixture.detectChanges();
 
-    expect(component.currentState).toEqual({hasNetworkConnection: false, hasInternetAccess: false});
+    expect(component.currentState()).toEqual({hasNetworkConnection: false, hasInternetAccess: false});
   }));
 
   it('should render offline then online labels based on current state', fakeAsync(() => {

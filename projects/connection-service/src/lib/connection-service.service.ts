@@ -1,5 +1,5 @@
 import {DOCUMENT, isPlatformBrowser} from '@angular/common';
-import {EventEmitter, Inject, Injectable, InjectionToken, OnDestroy, Optional, PLATFORM_ID} from '@angular/core';
+import {EventEmitter, inject, Injectable, InjectionToken, OnDestroy, PLATFORM_ID, signal} from '@angular/core';
 import {fromEvent, Observable, Subscription, timer} from 'rxjs';
 import {debounceTime, retry, startWith, switchMap, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
@@ -106,11 +106,24 @@ export class ConnectionService implements OnDestroy {
     hasInternetAccess: false,
     hasNetworkConnection: true
   };
+
+  /**
+   * Reactive (Signal) representation of the current connection state. Prefer this over `monitor()` in modern
+   * Angular applications that use signals for change detection. Updates whenever the network / internet status changes.
+   */
+  private readonly stateSignal = signal<ConnectionState>({...this.currentState});
+
+  /**
+   * Read-only Signal exposing the current connection state. Equivalent (dual API) to subscribing to `monitor()`.
+   */
+  readonly state = this.stateSignal.asReadonly();
+
   private offlineSubscription: Subscription;
   private onlineSubscription: Subscription;
   private httpSubscription: Subscription;
   private serviceOptions: ConnectionServiceOptions;
   private readonly windowRef: Window;
+  private readonly http = inject(HttpClient);
 
   /**
    * Current ConnectionService options. Notice that changing values of the returned object has not effect on service execution.
@@ -120,12 +133,11 @@ export class ConnectionService implements OnDestroy {
     return {...this.serviceOptions};
   }
 
-  constructor(
-    private http: HttpClient,
-    @Inject(DOCUMENT) documentRef: Document,
-    @Inject(PLATFORM_ID) platformId: object,
-    @Inject(ConnectionServiceOptionsToken) @Optional() options: ConnectionServiceOptions
-  ) {
+  constructor() {
+    const documentRef = inject(DOCUMENT);
+    const platformId = inject(PLATFORM_ID);
+    const options = inject(ConnectionServiceOptionsToken, {optional: true});
+
     this.windowRef = resolveWindow(documentRef, platformId);
     this.currentState.hasNetworkConnection = this.windowRef.navigator.onLine;
 
@@ -191,6 +203,7 @@ export class ConnectionService implements OnDestroy {
 
   private emitEvent() {
     this.stateChangeEventEmitter.emit(this.currentState);
+    this.stateSignal.set({...this.currentState});
   }
 
   ngOnDestroy(): void {

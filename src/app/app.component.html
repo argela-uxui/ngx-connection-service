@@ -6,12 +6,17 @@
   <br>
   <app-status-check></app-status-check>
 
-  <button *ngIf="!heartBeatState" (click)="setHeartBeatState(true)">Enable HeartBeat Check</button>
-  <button *ngIf="heartBeatState" (click)="setHeartBeatState(false)">Disable HeartBeat Check</button>
+  @if (!heartBeatState()) {
+    <button (click)="setHeartBeatState(true)">Enable HeartBeat Check</button>
+  } @else {
+    <button (click)="setHeartBeatState(false)">Disable HeartBeat Check</button>
+  }
 
   <br><br>
 
   <button (click)="useExecutor()">Use Executor Function</button>
-  <div *ngIf="internetChance">Internet Chance: {{internetChance}}</div>
+  @if (internetChance()) {
+    <div>Internet Chance: {{ internetChance() }}</div>
+  }
 
 </div>

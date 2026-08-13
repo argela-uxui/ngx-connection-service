@@ -36,35 +36,47 @@ Please use following table to determine suitable library version for your Angula
 | 20.0.x                           | 20.3.27           |
 ## Usage
 
-- Import `ConnectionServiceModule` in your `app.module.ts`.
+- Register `provideConnectionService()` in your application's providers (standalone / `ApplicationConfig`).
 
 ```ts
-import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationConfig} from '@angular/core';
+import {provideConnectionService} from 'ngx-connection-service';
 
-import {AppComponent} from './app.component';
-import {ConnectionServiceModule} from 'ngx-connection-service';
-
-@NgModule({
-  declarations: [
-    AppComponent
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideConnectionService(),
   ],
-  imports: [
-    BrowserModule,
-    ConnectionServiceModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
-export class AppModule {
-}
+};
 ```
 
-- Inject `ConnectionService` in your component's constructor.
-- Subscribe to `monitor()` method to get push notification whenever internet connection status is changed.
+```ts
+import {bootstrapApplication} from '@angular/platform-browser';
+import {AppComponent} from './app/app.component';
+import {appConfig} from './app/app.config';
+
+bootstrapApplication(AppComponent, appConfig)
+  .catch(err => console.error(err));
+```
+
+> **Legacy `NgModule` setup:** `ConnectionServiceModule` is still available and works, but is **deprecated**.
+> Prefer `provideConnectionService()` above.
+>
+> ```ts
+> import {NgModule} from '@angular/core';
+> import {ConnectionServiceModule} from 'ngx-connection-service';
+>
+> @NgModule({
+>   imports: [ConnectionServiceModule],
+> })
+> export class AppModule {
+> }
+> ```
+
+- Inject `ConnectionService` using `inject()` (or the constructor) in your component.
+- Read the reactive `state` Signal, or subscribe to `monitor()` for push notifications whenever the connection status changes. Both APIs are kept in sync (dual API).
 
 ```ts
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ConnectionService } from 'ngx-connection-service';
 
 @Component({
@@ -73,23 +85,29 @@ import { ConnectionService } from 'ngx-connection-service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  hasNetworkConnection: boolean;
-  hasInternetAccess: boolean;
-  status: string;
+  private readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
+  // Signal API (recommended for modern, signal-based Angular apps)
+  readonly currentState = this.connectionService.state;
+
+  constructor() {
+    // Observable API (still fully supported)
     this.connectionService.monitor().subscribe(currentState => {
-      this.hasNetworkConnection = currentState.hasNetworkConnection;
-      this.hasInternetAccess = currentState.hasInternetAccess;
-      if (this.hasNetworkConnection && this.hasInternetAccess) {
-        this.status = 'ONLINE';
-      } else {
-        this.status = 'OFFLINE';
-      }
+      console.log(currentState);
     });
   }
 }
 
+```
+
+In the template you can then read the Signal directly:
+
+```html
+@if (currentState().hasNetworkConnection && currentState().hasInternetAccess) {
+  <span>ONLINE</span>
+} @else {
+  <span>OFFLINE</span>
+}
 ```
 
 ## Configuration
@@ -131,39 +149,22 @@ export interface ConnectionServiceOptions {
 }
 ```
 
-You should define a provider for `ConnectionServiceOptionsToken` in your module as follows;
+You should provide `ConnectionServiceOptions` via `provideConnectionService(options)` as follows;
 
 ```ts
-import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationConfig} from '@angular/core';
+import {ConnectionServiceOptions, provideConnectionService} from 'ngx-connection-service';
 
-import {AppComponent} from './app.component';
-import {ConnectionServiceModule, ConnectionServiceOptions, ConnectionServiceOptionsToken} from 'ngx-connection-service';
-
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    ConnectionServiceModule
-  ],
+export const appConfig: ApplicationConfig = {
   providers: [
-    {
-      provide: ConnectionServiceOptionsToken,
-      useValue: <ConnectionServiceOptions>{
-        enableHeartbeat: false,
-        heartbeatUrl: '/assets/ping.json',
-        requestMethod: 'get',
-        heartbeatInterval: 3000
-      }
-    }
+    provideConnectionService({
+      enableHeartbeat: false,
+      heartbeatUrl: '/assets/ping.json',
+      requestMethod: 'get',
+      heartbeatInterval: 3000
+    } satisfies ConnectionServiceOptions),
   ],
-  bootstrap: [AppComponent]
-})
-export class AppModule {
-}
-
+};
 ```
 
 ### Custom HeartBeat handling function
@@ -171,7 +172,7 @@ export class AppModule {
 You could use a callback function for handling heartBeat requests by defining `heartbeatExecutor` property in `ConnectionServiceOptions`;
 
 ```ts
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ConnectionService } from 'ngx-connection-service';
 import {Observable} from 'rxjs';
 
@@ -181,12 +182,11 @@ import {Observable} from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  hasNetworkConnection: boolean;
-  hasInternetAccess: boolean;
-  status: string;
+  private readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
+  readonly currentState = this.connectionService.state;
 
+  constructor() {
     this.connectionService.updateOptions({
       heartbeatExecutor: options => new Observable<any>(subscriber => {
         if (Math.random() > .5) {
@@ -197,16 +197,6 @@ export class AppComponent {
         }
       })
     });
-
-    this.connectionService.monitor().subscribe(currentState => {
-      this.hasNetworkConnection = currentState.hasNetworkConnection;
-      this.hasInternetAccess = currentState.hasInternetAccess;
-      if (this.hasNetworkConnection && this.hasInternetAccess) {
-        this.status = 'ONLINE';
-      } else {
-        this.status = 'OFFLINE';
-      }
-    });
   }
 }
 
@@ -214,6 +204,9 @@ export class AppComponent {
 
 ## Changes
 
+- Standalone-first API: `provideConnectionService()` replaces `ConnectionServiceModule` for `ApplicationConfig` / `bootstrapApplication` setups. `ConnectionServiceModule` is kept for backward compatibility but is deprecated.
+- `ConnectionService` now exposes a reactive `state` Signal in addition to the existing `monitor()` Observable API (dual API, non-breaking).
+- Demo application converted to standalone components using the new `@if` control-flow syntax and `inject()`.
 - This version use https://api.ipify.org/ to determine Internet connection status
 - Removed dependency to "ssr-window" package
 

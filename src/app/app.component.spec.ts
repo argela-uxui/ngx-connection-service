@@ -1,5 +1,4 @@
 import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
-import {NO_ERRORS_SCHEMA} from '@angular/core';
 import {ConnectionService, ConnectionState} from 'ngx-connection-service';
 import {of} from 'rxjs';
 import {AppComponent} from './app.component';
@@ -23,13 +22,10 @@ describe('AppComponent', () => {
     connectionServiceSpy.monitor.and.returnValue(of(initialState));
 
     TestBed.configureTestingModule({
-      declarations: [
-        AppComponent,
-      ],
+      imports: [AppComponent],
       providers: [
         {provide: ConnectionService, useValue: connectionServiceSpy},
       ],
-      schemas: [NO_ERRORS_SCHEMA],
     }).compileComponents();
   }));
 
@@ -44,13 +40,13 @@ describe('AppComponent', () => {
   });
 
   it('should initialize heartBeatState from connection service options', () => {
-    expect(component.heartBeatState).toBeTrue();
+    expect(component.heartBeatState()).toBeTrue();
   });
 
   it('setHeartBeatState should update local state and service options', () => {
     component.setHeartBeatState(false);
 
-    expect(component.heartBeatState).toBeFalse();
+    expect(component.heartBeatState()).toBeFalse();
     expect(connectionServiceSpy.updateOptions).toHaveBeenCalledWith({enableHeartbeat: false});
   });
 
@@ -66,7 +62,7 @@ describe('AppComponent', () => {
       receivedValue = value;
     });
 
-    expect(component.internetChance).toBe(90);
+    expect(component.internetChance()).toBe(90);
     expect(receivedValue).toBeTrue();
   });
 
@@ -83,7 +79,7 @@ describe('AppComponent', () => {
       }
     });
 
-    expect(component.internetChance).toBe(10);
+    expect(component.internetChance()).toBe(10);
     expect(receivedError).not.toBeNull();
     expect(receivedError?.message).toContain('Connection error');
   });
@@ -94,13 +90,13 @@ describe('AppComponent', () => {
   });
 
   it('should show the proper heartbeat toggle button based on current state', () => {
-    component.heartBeatState = true;
+    component.setHeartBeatState(true);
     fixture.detectChanges();
 
     let html = (fixture.nativeElement as HTMLElement).textContent || '';
     expect(html).toContain('Disable HeartBeat Check');
 
-    component.heartBeatState = false;
+    component.setHeartBeatState(false);
     fixture.detectChanges();
 
     html = (fixture.nativeElement as HTMLElement).textContent || '';
