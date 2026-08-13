@@ -3,9 +3,10 @@ import {ConnectionService} from 'ngx-connection-service';
 import {Observable} from 'rxjs';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.css'],
+    standalone: false
 })
 export class AppComponent {
   heartBeatState;
@@ -22,10 +23,10 @@ export class AppComponent {
 
   useExecutor() {
     this.connectionService.updateOptions({
-      heartbeatExecutor: options => new Observable<any>(subscriber => {
+      heartbeatExecutor: () => new Observable<any>(subscriber => {
         this.internetChance = Math.round(Math.random() * 100);
         if (this.internetChance > 50) {
-          subscriber.next();
+          subscriber.next(true);
           subscriber.complete();
         } else {
           throw new Error('Connection error');
