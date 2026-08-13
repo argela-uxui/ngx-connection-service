@@ -31,10 +31,9 @@ Please use following table to determine suitable library version for your Angula
 | 15.0.x                           | 15.2.9            |
 | 16.0.x                           | 16.1.8            |
 | 17.0.x                           | 17.1.0            |
-| 18.0.x                           | 18.2.14           |
+| 18.0.x                           | 18.1.2            |
 | 19.0.x                           | 19.2.25           |
 | 20.0.x                           | 20.3.27           |
-
 ## Usage
 
 - Register `provideConnectionService()` in your application's providers (standalone / `ApplicationConfig`).
@@ -127,7 +126,7 @@ export interface ConnectionServiceOptions {
   enableHeartbeat?: boolean;
   /**
    * Url used for checking Internet connectivity, heartbeat system periodically makes "HEAD" requests to this URL to determine Internet
-   * connection status. Default value is "'https://corsproxy.io?' + encodeURIComponent('https://internethealthtest.org')". (CORS restrictions are bypassed with this URL)
+   * connection status. Default value is "//api.ipify.org/".
    */
   heartbeatUrl?: string;
   /**
@@ -191,7 +190,7 @@ export class AppComponent {
     this.connectionService.updateOptions({
       heartbeatExecutor: options => new Observable<any>(subscriber => {
         if (Math.random() > .5) {
-          subscriber.next(true);
+          subscriber.next();
           subscriber.complete();
         } else {
           throw new Error('Connection error');

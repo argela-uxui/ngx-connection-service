@@ -1,31 +1,30 @@
-import {Component} from '@angular/core';
+import {Component, inject, signal} from '@angular/core';
 import {ConnectionService} from 'ngx-connection-service';
 import {Observable} from 'rxjs';
+import {StatusCheckComponent} from './components/status-check/status-check.component';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.css'],
-    standalone: false
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css'],
+  imports: [StatusCheckComponent],
 })
 export class AppComponent {
-  heartBeatState;
-  internetChance: number;
+  private readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
-    this.heartBeatState = this.connectionService.options.enableHeartbeat;
-  }
+  readonly heartBeatState = signal(this.connectionService.options.enableHeartbeat);
+  readonly internetChance = signal<number | undefined>(undefined);
 
   setHeartBeatState(state: boolean) {
-    this.heartBeatState = state;
+    this.heartBeatState.set(state);
     this.connectionService.updateOptions({enableHeartbeat: state});
   }
 
   useExecutor() {
     this.connectionService.updateOptions({
       heartbeatExecutor: () => new Observable<any>(subscriber => {
-        this.internetChance = Math.round(Math.random() * 100);
-        if (this.internetChance > 50) {
+        this.internetChance.set(Math.round(Math.random() * 100));
+        if (this.internetChance()! > 50) {
           subscriber.next(true);
           subscriber.complete();
         } else {
