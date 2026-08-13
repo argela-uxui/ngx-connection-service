@@ -22,10 +22,10 @@ export class AppComponent {
 
   useExecutor() {
     this.connectionService.updateOptions({
-      heartbeatExecutor: options => new Observable<any>(subscriber => {
+      heartbeatExecutor: () => new Observable<any>(subscriber => {
         this.internetChance = Math.round(Math.random() * 100);
         if (this.internetChance > 50) {
-          subscriber.next();
+          subscriber.next(true);
           subscriber.complete();
         } else {
           throw new Error('Connection error');

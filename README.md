@@ -10,6 +10,10 @@ This library is a fork of https://github.com/ultrasonicsoft/ng-connection-servic
 npm i ngx-connection-service --save
 ```
 
+## Server-Side Rendering (SSR)
+
+No extra dependencies are required for Angular Universal / SSR. On the server, the service uses a Window stub with `navigator.onLine = true` and logs a console warning. Online/offline DOM events are only active in the browser after hydration.
+
 ## Angular Version Compatibility
 
 Please use following table to determine suitable library version for your Angular project.
@@ -27,7 +31,7 @@ Please use following table to determine suitable library version for your Angula
 | 15.0.x                           | 15.2.9            |
 | 16.0.x                           | 16.1.8            |
 | 17.0.x                           | 17.1.0            |
-| 18.0.x                           | 18.1.2            |
+| 18.0.x                           | 18.2.14           |
 
 ## Usage
 
@@ -185,7 +189,7 @@ export class AppComponent {
     this.connectionService.updateOptions({
       heartbeatExecutor: options => new Observable<any>(subscriber => {
         if (Math.random() > .5) {
-          subscriber.next();
+          subscriber.next(true);
           subscriber.complete();
         } else {
           throw new Error('Connection error');
@@ -210,7 +214,27 @@ export class AppComponent {
 ## Changes
 
 - This version use https://api.ipify.org/ to determine Internet connection status
+- Removed dependency to "ssr-window" package
+
+## Security / Dependency Blockers
+
+### Upgrade Matrix (current tree)
+
+| Package group | Previous range | Current range | Decision |
+|---------------|----------------|---------------|----------|
+| Angular runtime (`@angular/*`) | `^18.2.14` | `^18.2.14` | Keep Angular in `18.x` line as requested. |
+| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `18.x` | `18.x` | Keep Angular tooling in `18.x` only. |
+| Lint stack (`eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | `8.x` | `9.x`/latest `8.x` companion packages | Upgraded to latest compatible non-Angular majors. |
+| Type defs (`@types/node`, `@types/jasmine`) | Node 18 / older Jasmine types | Node 22 / latest Jasmine 5 types | Upgraded within compatibility. |
+| Test UI reporter (`karma-jasmine-html-reporter`, `jasmine-core`) | `2.1.0` / `5.1.x` | `2.2.0` / `6.3.x` | Upgraded to latest compatible versions. |
+| E2E stack (`protractor`, `jasmine-spec-reporter`, `ts-node`) | present | removed | Fully removed from current tree. |
+
+### Blockers (pinned to smallest secure Angular 18-compatible set)
+
+- Angular advisories for `@angular/core`, `@angular/common`, and `@angular/compiler` require upgrading beyond Angular 18 according to `npm audit` (`npm audit fix --force` proposes Angular 21).
+- Build-chain advisories rooted in Angular 18 toolchain transitive deps (`@angular-devkit/build-angular`, `@angular/build`, `@angular/cli`) require major Angular tooling upgrades, which would violate the Angular 18 constraint.
+- Decision: keep Angular runtime and build tooling pinned to latest available `18.x` and accept these residual advisories until an Angular major upgrade is allowed.
 
 ## License
 
-[MIT License](https://github.com/yildiraymeric/ngx-connection-service/blob/master/LICENSE) © M. Yıldıray Meriç & Balram Chavan (orginal work)
+[MIT License](https://github.com/argela-uxui/ngx-connection-service/blob/master/LICENSE) © Argela Inc. & Balram Chavan (orginal work)
