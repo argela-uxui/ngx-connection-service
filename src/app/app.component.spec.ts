@@ -75,7 +75,7 @@ describe('AppComponent', () => {
     const optionsArg = connectionServiceSpy.updateOptions.calls.mostRecent().args[0];
     spyOn(Math, 'random').and.returnValue(0.1);
 
-    let receivedError: Error | null = null;
+    let receivedError: any = null;
     optionsArg.heartbeatExecutor?.().subscribe({
       error: error => {
         receivedError = error;
@@ -84,7 +84,11 @@ describe('AppComponent', () => {
 
     expect(component.internetChance()).toBe(10);
     expect(receivedError).not.toBeNull();
-    expect(receivedError?.message).toContain('Connection error');
+    if (!receivedError) {
+      fail('Expected heartbeat executor to throw an error');
+      return;
+    }
+    expect(receivedError.message).toContain('Connection error');
   });
 
   it('should render title in a h1 tag', () => {

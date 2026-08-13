@@ -1,6 +1,6 @@
 import {EnvironmentProviders, makeEnvironmentProviders, NgModule} from '@angular/core';
 import {ConnectionService, ConnectionServiceOptions, ConnectionServiceOptionsToken} from './connection-service.service';
-import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {provideHttpClient, withInterceptorsFromDi, withXhr} from '@angular/common/http';
 
 /**
  * Registers `ConnectionService` and its dependencies (HttpClient) with the application's environment injector.
@@ -19,7 +19,7 @@ import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
 export function provideConnectionService(options?: ConnectionServiceOptions): EnvironmentProviders {
   return makeEnvironmentProviders([
     ConnectionService,
-    provideHttpClient(withInterceptorsFromDi()),
+    provideHttpClient(withXhr(), withInterceptorsFromDi()),
     ...(options ? [{provide: ConnectionServiceOptionsToken, useValue: options}] : []),
   ]);
 }
@@ -28,7 +28,7 @@ export function provideConnectionService(options?: ConnectionServiceOptions): En
  * @deprecated Use `provideConnectionService()` instead.
  */
 @NgModule({
-  providers: [ConnectionService, provideHttpClient(withInterceptorsFromDi())]
+  providers: [ConnectionService, provideHttpClient(withXhr(), withInterceptorsFromDi())]
 })
 export class ConnectionServiceModule {
 }

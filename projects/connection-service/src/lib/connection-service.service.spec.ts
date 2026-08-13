@@ -1,7 +1,7 @@
 import {DOCUMENT} from '@angular/common';
 import {Provider, PLATFORM_ID, provideZonelessChangeDetection} from '@angular/core';
 import {TestBed} from '@angular/core/testing';
-import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {provideHttpClient, withInterceptorsFromDi, withXhr} from '@angular/common/http';
 import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {Observable, of, throwError} from 'rxjs';
 import {TestScheduler} from 'rxjs/testing';
@@ -33,7 +33,7 @@ describe('ConnectionService', () => {
       providers: [
         ConnectionService,
         provideZonelessChangeDetection(),
-        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClient(withXhr(), withInterceptorsFromDi()),
         provideHttpClientTesting(),
         {provide: ConnectionServiceSchedulerToken, useValue: scheduler},
         ...(options ? [{provide: ConnectionServiceOptionsToken, useValue: options}] : []),

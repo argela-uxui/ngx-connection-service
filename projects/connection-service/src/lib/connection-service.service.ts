@@ -128,9 +128,9 @@ export class ConnectionService implements OnDestroy {
    */
   readonly state = this.stateSignal.asReadonly();
 
-  private offlineSubscription: Subscription;
-  private onlineSubscription: Subscription;
-  private httpSubscription: Subscription;
+  private offlineSubscription: Subscription | null = null;
+  private onlineSubscription: Subscription | null = null;
+  private httpSubscription: Subscription | null = null;
   private serviceOptions: ConnectionServiceOptions;
   private readonly windowRef: Window;
   private readonly http = inject(HttpClient);
@@ -155,8 +155,8 @@ export class ConnectionService implements OnDestroy {
     this.serviceOptions = {
       ...ConnectionService.DEFAULT_OPTIONS,
       heartbeatExecutor: () => this.http.request(
-        this.serviceOptions.requestMethod,
-        this.serviceOptions.heartbeatUrl,
+        this.serviceOptions.requestMethod ?? ConnectionService.DEFAULT_OPTIONS.requestMethod!,
+        this.serviceOptions.heartbeatUrl ?? ConnectionService.DEFAULT_OPTIONS.heartbeatUrl!,
         {responseType: 'text', withCredentials: false}
       ),
       ...options
@@ -179,12 +179,26 @@ export class ConnectionService implements OnDestroy {
     }
 
     if (this.serviceOptions.enableHeartbeat) {
-      this.httpSubscription = timer(0, this.serviceOptions.heartbeatInterval, this.scheduler)
+      this.httpSubscription = timer(
+        0,
+        this.serviceOptions.heartbeatInterval ?? ConnectionService.DEFAULT_OPTIONS.heartbeatInterval!,
+        this.scheduler
+      )
         .pipe(
-          switchMap(() => this.serviceOptions.heartbeatExecutor(this.serviceOptions)),
+          switchMap(() => (
+            this.serviceOptions.heartbeatExecutor ??
+            (() => this.http.request(
+              this.serviceOptions.requestMethod ?? ConnectionService.DEFAULT_OPTIONS.requestMethod!,
+              this.serviceOptions.heartbeatUrl ?? ConnectionService.DEFAULT_OPTIONS.heartbeatUrl!,
+              {responseType: 'text', withCredentials: false}
+            ))
+          )(this.serviceOptions)),
           retry({
             delay: () =>
-              timer(this.serviceOptions.heartbeatRetryInterval, this.scheduler).pipe(
+              timer(
+                this.serviceOptions.heartbeatRetryInterval ?? ConnectionService.DEFAULT_OPTIONS.heartbeatRetryInterval!,
+                this.scheduler
+              ).pipe(
                 tap(() => {
                   this.currentState.hasInternetAccess = false;
                   this.emitEvent();
@@ -224,9 +238,9 @@ export class ConnectionService implements OnDestroy {
   ngOnDestroy(): void {
     try {
       this.stateChangeEventSubscription.unsubscribe();
-      this.offlineSubscription.unsubscribe();
-      this.onlineSubscription.unsubscribe();
-      this.httpSubscription.unsubscribe();
+      this.offlineSubscription?.unsubscribe();
+      this.onlineSubscription?.unsubscribe();
+      this.httpSubscription?.unsubscribe();
     } catch {
       // subscriptions may already be cleared
     }

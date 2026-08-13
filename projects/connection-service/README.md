@@ -35,6 +35,7 @@ Please use following table to determine suitable library version for your Angula
 | 19.0.x                           | 19.2.25           |
 | 20.0.x                           | 20.3.27           |
 | 21.0.x                           | 21.2.20           |
+| 22.0.x                           | 22.1.2            |
 ## Usage
 
 - Register `provideConnectionService()` in your application's providers (standalone / `ApplicationConfig`).
@@ -250,20 +251,21 @@ provided, the service defaults to RxJS's regular `asyncScheduler` (real timers),
 
 | Package group | Previous range | Current range | Decision |
 |---------------|----------------|---------------|----------|
-| Angular runtime (`@angular/*`) | `^20.3.27` | `^21.2.20` | Upgraded to latest `21.x` runtime patches. |
-| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `20.x` | `21.x` | Upgraded to latest Angular 21 tooling patches. |
-| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `20.7.0` | Angular-eslint `21.4.0` + ESLint `10.x` companions | Upgraded to latest Angular 21-compatible lint toolchain. |
+| Angular runtime (`@angular/*`) | `^21.2.20` | `^22.1.2` | Upgraded to latest `22.x` runtime patches. |
+| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `21.x` | `22.x` | Upgraded to latest Angular 22 tooling patches. |
+| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `21.4.0` | Angular-eslint `22.1.0` + ESLint `10.x` companions | Upgraded to latest Angular 22-compatible lint toolchain. |
 | Type defs (`@types/node`, `@types/jasmine`) | previous majors | Latest Node/Jasmine types compatible with current toolchain | Retained at latest compatible versions. |
 | Test UI reporter (`karma-jasmine-html-reporter`, `jasmine-core`) | `2.1.0` / `5.1.x` | `2.2.0` / `6.3.x` | Upgraded to latest compatible versions. |
-| Audit remediations (`less`, `uuid`) | Vulnerable transitive versions | `less@^4.8.1`, `uuid@^11.1.1` via npm `overrides` | Kept patched via npm `overrides`. |
+| TypeScript toolchain (`typescript`) | `~5.9.3` | `~6.0.3` | Upgraded to satisfy Angular 22 peer requirements. |
+| Overrides (`less`, `uuid`, `webpack-dev-server`) | Fixed versions in `overrides` | removed | Removed; now resolved by upstream transitive graph. |
 | E2E stack (`protractor`, `jasmine-spec-reporter`, `ts-node`) | present | removed | Fully removed from current tree. |
 
-### Exceptions (latest-version policy with Angular 21 compatibility)
+### Exceptions (latest-version policy with Angular 22 compatibility)
 
-- `eslint` / `@eslint/js` remain on latest `9.x` because `angular-eslint@20.7.0` supports `^8.57.0 || ^9.0.0` and does not yet permit ESLint `10.x`.
 - `zone.js` has been **removed entirely**. The application and library now run zoneless via `provideZonelessChangeDetection()`; `zone.js` is only an optional peer of `@angular/core` and is not installed.
-- Angular runtime/build packages are intentionally pinned to latest `21.x` (not `22+`) to maintain declared Angular 21 compatibility for this release line.
-- If a dependency cannot move to its global latest version without breaking Angular 21 peer constraints, it is pinned to the highest Angular 21-compatible release.
+- Angular runtime/build packages are intentionally pinned to latest `22.x` (not `23+`) to maintain declared Angular 22 compatibility for this release line.
+- `@angular/cli` 22 requires Node.js `^22.22.3 || ^24.15.0 || >=26.0.0`; run with a matching Node patch version before executing Angular CLI commands.
+- If a dependency cannot move to its global latest version without breaking Angular 22 peer constraints, it is pinned to the highest Angular 22-compatible release.
 
 ## License
 
