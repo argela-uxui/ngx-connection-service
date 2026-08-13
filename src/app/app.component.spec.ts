@@ -1,4 +1,5 @@
-import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
+import {ComponentFixture, TestBed} from '@angular/core/testing';
+import {provideZonelessChangeDetection} from '@angular/core';
 import {ConnectionService, ConnectionState} from 'ngx-connection-service';
 import {of} from 'rxjs';
 import {AppComponent} from './app.component';
@@ -13,7 +14,7 @@ describe('AppComponent', () => {
     hasNetworkConnection: true,
   };
 
-  beforeEach(waitForAsync(() => {
+  beforeEach(async () => {
     connectionServiceSpy = jasmine.createSpyObj<ConnectionService>(
       'ConnectionService',
       ['monitor', 'updateOptions'],
@@ -21,13 +22,14 @@ describe('AppComponent', () => {
     );
     connectionServiceSpy.monitor.and.returnValue(of(initialState));
 
-    TestBed.configureTestingModule({
+    await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
+        provideZonelessChangeDetection(),
         {provide: ConnectionService, useValue: connectionServiceSpy},
       ],
     }).compileComponents();
-  }));
+  });
 
   beforeEach(() => {
     fixture = TestBed.createComponent(AppComponent);

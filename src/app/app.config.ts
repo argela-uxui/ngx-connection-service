@@ -1,8 +1,9 @@
-import {ApplicationConfig} from '@angular/core';
+import {ApplicationConfig, provideZonelessChangeDetection} from '@angular/core';
 import {ConnectionServiceOptions, provideConnectionService} from 'ngx-connection-service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZonelessChangeDetection(),
     provideConnectionService({
       enableHeartbeat: true,
       // heartbeatUrl: '/assets/ping.json',
