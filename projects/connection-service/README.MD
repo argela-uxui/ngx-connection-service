@@ -32,6 +32,7 @@ Please use following table to determine suitable library version for your Angula
 | 16.0.x                           | 16.1.8            |
 | 17.0.x                           | 17.1.0            |
 | 18.0.x                           | 18.1.2            |
+| 19.0.x                           | 19.2.25           |
 ## Usage
 
 - Import `ConnectionServiceModule` in your `app.module.ts`.
@@ -221,18 +222,18 @@ export class AppComponent {
 
 | Package group | Previous range | Current range | Decision |
 |---------------|----------------|---------------|----------|
-| Angular runtime (`@angular/*`) | `^18.2.14` | `^18.2.14` | Keep Angular in `18.x` line as requested. |
-| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `18.x` | `18.x` | Keep Angular tooling in `18.x` only. |
-| Lint stack (`eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | `8.x` | `9.x`/latest `8.x` companion packages | Upgraded to latest compatible non-Angular majors. |
-| Type defs (`@types/node`, `@types/jasmine`) | Node 18 / older Jasmine types | Node 22 / latest Jasmine 5 types | Upgraded within compatibility. |
+| Angular runtime (`@angular/*`) | `^18.2.14` | `^19.2.25` | Upgraded to latest `19.x` runtime patches. |
+| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `18.x` | `19.x` | Upgraded to latest Angular 19 tooling patches. |
+| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `18.x` | Angular-eslint `19.8.1` + latest ESLint 9-compatible companions | Upgraded to latest Angular 19-compatible lint toolchain. |
+| Type defs (`@types/node`, `@types/jasmine`) | Node 18 / older Jasmine types | Latest Node/Jasmine types compatible with current toolchain | Upgraded within Angular 19 constraints. |
 | Test UI reporter (`karma-jasmine-html-reporter`, `jasmine-core`) | `2.1.0` / `5.1.x` | `2.2.0` / `6.3.x` | Upgraded to latest compatible versions. |
 | E2E stack (`protractor`, `jasmine-spec-reporter`, `ts-node`) | present | removed | Fully removed from current tree. |
 
-### Blockers (pinned to smallest secure Angular 18-compatible set)
+### Blockers (pinned to latest Angular 19-compatible set)
 
-- Angular advisories for `@angular/core`, `@angular/common`, and `@angular/compiler` require upgrading beyond Angular 18 according to `npm audit` (`npm audit fix --force` proposes Angular 21).
-- Build-chain advisories rooted in Angular 18 toolchain transitive deps (`@angular-devkit/build-angular`, `@angular/build`, `@angular/cli`) require major Angular tooling upgrades, which would violate the Angular 18 constraint.
-- Decision: keep Angular runtime and build tooling pinned to latest available `18.x` and accept these residual advisories until an Angular major upgrade is allowed.
+- Angular advisories for `@angular/core`, `@angular/common`, and `@angular/compiler` may still require upgrading beyond Angular 19 according to `npm audit` output.
+- Build-chain advisories rooted in Angular 19 toolchain transitive deps (`@angular-devkit/build-angular`, `@angular/build`, `@angular/cli`) may require major Angular tooling upgrades.
+- Decision: keep runtime and build tooling pinned to latest available `19.x` and accept residual advisories until an Angular major upgrade is allowed.
 
 ## License
 
