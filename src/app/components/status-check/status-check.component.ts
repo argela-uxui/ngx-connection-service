@@ -1,15 +1,16 @@
 import {Component, inject} from '@angular/core';
 import {toSignal} from '@angular/core/rxjs-interop';
-import {ConnectionState, ConnectionService} from 'ngx-connection-service';
+import {ConnectionService, ConnectionState} from 'ngx-connection-service';
 
 @Component({
   selector: 'app-status-check',
   templateUrl: './status-check.component.html',
   styleUrls: ['./status-check.component.css'],
+  imports: []
 })
 export class StatusCheckComponent {
 
-  private readonly connectionService = inject(ConnectionService);
+  protected readonly connectionService = inject(ConnectionService);
 
   /**
    * Reactive current connection state. Bridged from `monitor()` Observable via `toSignal` to demonstrate the

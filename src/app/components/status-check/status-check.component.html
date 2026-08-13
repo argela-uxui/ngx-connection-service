@@ -2,7 +2,11 @@
   Network Status: <span [style.color]="currentState()?.hasNetworkConnection ? 'green' : 'red'">
       {{ currentState()?.hasNetworkConnection ? 'ONLINE' : 'OFFLINE' }}!
     </span><br>
-  Internet Status: <span [style.color]="currentState()?.hasInternetAccess ? 'green' : 'red'">
+  Internet Status(Observable): <span [style.color]="currentState()?.hasInternetAccess ? 'green' : 'red'">
       {{ currentState()?.hasInternetAccess ? 'ONLINE' : 'OFFLINE' }}!
+    </span>
+  <br>
+  Internet Status(Signal): <span [style.color]="connectionService?.state()?.hasInternetAccess ? 'green' : 'red'">
+      {{ connectionService?.state()?.hasInternetAccess ? 'ONLINE' : 'OFFLINE' }}!
     </span>
 </h1>

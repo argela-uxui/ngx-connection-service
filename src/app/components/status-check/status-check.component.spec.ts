@@ -1,5 +1,5 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideZonelessChangeDetection} from '@angular/core';
+import {provideZonelessChangeDetection, signal} from '@angular/core';
 import {ConnectionService, ConnectionState} from 'ngx-connection-service';
 import {Subject} from 'rxjs';
 
@@ -12,11 +12,27 @@ describe('StatusCheckComponent', () => {
   let component: StatusCheckComponent;
   let fixture: ComponentFixture<StatusCheckComponent>;
   let monitorSubject: Subject<ConnectionState>;
+  let mockStateSignal: ReturnType<typeof signal<ConnectionState>>;
   let connectionServiceSpy: jasmine.SpyObj<ConnectionService>;
+
+  const initialState: ConnectionState = {hasNetworkConnection: false, hasInternetAccess: false};
+
+  /** Emits a new state on both the mocked Observable (`monitor()`) and Signal (`state`) APIs, mirroring how the
+   * real `ConnectionService` keeps both in sync internally. */
+  const emit = (state: ConnectionState) => {
+    monitorSubject.next(state);
+    mockStateSignal.set(state);
+  };
 
   beforeEach(async () => {
     monitorSubject = new Subject<ConnectionState>();
-    connectionServiceSpy = jasmine.createSpyObj<ConnectionService>('ConnectionService', ['monitor']);
+    mockStateSignal = signal<ConnectionState>(initialState);
+
+    connectionServiceSpy = jasmine.createSpyObj<ConnectionService>(
+      'ConnectionService',
+      ['monitor'],
+      {state: mockStateSignal.asReadonly()}
+    );
     connectionServiceSpy.monitor.and.returnValue(monitorSubject.asObservable());
 
     await TestBed.configureTestingModule({
@@ -41,7 +57,7 @@ describe('StatusCheckComponent', () => {
   });
 
   it('should update currentState from monitor stream', async () => {
-    monitorSubject.next({hasNetworkConnection: false, hasInternetAccess: false});
+    emit({hasNetworkConnection: false, hasInternetAccess: false});
     await flushMicrotasks();
     fixture.detectChanges();
 
@@ -49,20 +65,22 @@ describe('StatusCheckComponent', () => {
   });
 
   it('should render offline then online labels based on current state', async () => {
-    monitorSubject.next({hasNetworkConnection: false, hasInternetAccess: false});
+    emit({hasNetworkConnection: false, hasInternetAccess: false});
     await flushMicrotasks();
     fixture.detectChanges();
 
     let html = ((fixture.nativeElement as HTMLElement).textContent || '').replace(/\s+/g, ' ').trim();
     expect(html).toContain('Network Status: OFFLINE!');
-    expect(html).toContain('Internet Status: OFFLINE!');
+    expect(html).toContain('Internet Status(Observable): OFFLINE!');
+    expect(html).toContain('Internet Status(Signal): OFFLINE!');
 
-    monitorSubject.next({hasNetworkConnection: true, hasInternetAccess: true});
+    emit({hasNetworkConnection: true, hasInternetAccess: true});
     await flushMicrotasks();
     fixture.detectChanges();
 
     html = ((fixture.nativeElement as HTMLElement).textContent || '').replace(/\s+/g, ' ').trim();
     expect(html).toContain('Network Status: ONLINE!');
-    expect(html).toContain('Internet Status: ONLINE!');
+    expect(html).toContain('Internet Status(Observable): ONLINE!');
+    expect(html).toContain('Internet Status(Signal): ONLINE!');
   });
 });

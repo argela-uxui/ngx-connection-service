@@ -17,10 +17,11 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     connectionServiceSpy = jasmine.createSpyObj<ConnectionService>(
       'ConnectionService',
-      ['monitor', 'updateOptions'],
+      ['monitor', 'updateOptions','state'],
       {options: {enableHeartbeat: true}}
     );
     connectionServiceSpy.monitor.and.returnValue(of(initialState));
+    connectionServiceSpy.state.and.returnValue(initialState);
 
     await TestBed.configureTestingModule({
       imports: [AppComponent],

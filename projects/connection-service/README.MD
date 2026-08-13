@@ -202,9 +202,41 @@ export class AppComponent {
 
 ```
 
+## Testing your own code that uses `ConnectionService`
+
+`ConnectionService` uses RxJS `timer()`/`debounceTime()` internally (heartbeat polling, retry delay, and state
+debouncing). If you write unit tests that need to wait for these internal delays, you don't need `zone.js`'s
+`fakeAsync`/`tick`. Instead, provide `ConnectionServiceSchedulerToken` with an RxJS `TestScheduler`
+(from `rxjs/testing`) and advance its virtual clock synchronously:
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {TestScheduler} from 'rxjs/testing';
+import {ConnectionService, ConnectionServiceSchedulerToken} from 'ngx-connection-service';
+
+const scheduler = new TestScheduler(() => {});
+
+TestBed.configureTestingModule({
+  providers: [
+    ConnectionService,
+    {provide: ConnectionServiceSchedulerToken, useValue: scheduler},
+    // ...your other providers (e.g. provideHttpClient, provideHttpClientTesting)
+  ],
+});
+
+const service = TestBed.inject(ConnectionService);
+
+// Advance virtual time by 300ms synchronously instead of really waiting:
+scheduler.maxFrames = scheduler.frame + 300;
+scheduler.flush();
+```
+
+This keeps tests instantaneous and fully zoneless. `ConnectionServiceSchedulerToken` is optional — when not
+provided, the service defaults to RxJS's regular `asyncScheduler` (real timers), which is what you want in production.
+
 ## Changes
 
-- Zoneless: the demo application and library tests no longer depend on `zone.js`. The app uses `provideZonelessChangeDetection()`; tests use real `async`/`await` instead of `fakeAsync`/`tick`.
+- Zoneless: the demo application and library tests no longer depend on `zone.js`. The app uses `provideZonelessChangeDetection()`; tests use RxJS `TestScheduler` virtual time instead of `fakeAsync`/`tick`.
 - Standalone-first API: `provideConnectionService()` replaces `ConnectionServiceModule` for `ApplicationConfig` / `bootstrapApplication` setups. `ConnectionServiceModule` is kept for backward compatibility but is deprecated.
 - `ConnectionService` now exposes a reactive `state` Signal in addition to the existing `monitor()` Observable API (dual API, non-breaking).
 - Demo application converted to standalone components using the new `@if` control-flow syntax and `inject()`.

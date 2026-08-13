@@ -1,6 +1,6 @@
 import {DOCUMENT, isPlatformBrowser} from '@angular/common';
 import {EventEmitter, inject, Injectable, InjectionToken, OnDestroy, PLATFORM_ID, signal} from '@angular/core';
-import {fromEvent, Observable, Subscription, timer} from 'rxjs';
+import {fromEvent, Observable, SchedulerLike, Subscription, timer} from 'rxjs';
 import {debounceTime, retry, startWith, switchMap, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 
@@ -56,6 +56,15 @@ export interface ConnectionServiceOptions {
 export const ConnectionServiceOptionsToken = new InjectionToken<ConnectionServiceOptions>('ConnectionServiceOptionsToken');
 
 /**
+ * InjectionToken to override the RxJS `SchedulerLike` used internally for `timer()`/`debounceTime()` operations
+ * (heartbeat polling, retry delay, and state-change debouncing). Not needed for normal application use — defaults
+ * to RxJS's `asyncScheduler` when not provided. Primarily useful in unit tests, where providing a `TestScheduler`
+ * (from `rxjs/testing`) allows advancing virtual time synchronously instead of waiting on real timers, without
+ * requiring `zone.js`'s `fakeAsync`/`tick`.
+ */
+export const ConnectionServiceSchedulerToken = new InjectionToken<SchedulerLike>('ConnectionServiceSchedulerToken');
+
+/**
  * Minimal Window-like object used when running outside the browser (e.g. Angular Universal SSR).
  */
 function createWindowStub(): Window {
@@ -101,6 +110,7 @@ export class ConnectionService implements OnDestroy {
   };
 
   private stateChangeEventEmitter = new EventEmitter<ConnectionState>();
+  private stateChangeEventSubscription: Subscription;
 
   private currentState: ConnectionState = {
     hasInternetAccess: false,
@@ -124,6 +134,7 @@ export class ConnectionService implements OnDestroy {
   private serviceOptions: ConnectionServiceOptions;
   private readonly windowRef: Window;
   private readonly http = inject(HttpClient);
+  private readonly scheduler = inject(ConnectionServiceSchedulerToken, {optional: true}) ?? undefined;
 
   /**
    * Current ConnectionService options. Notice that changing values of the returned object has not effect on service execution.
@@ -151,6 +162,11 @@ export class ConnectionService implements OnDestroy {
       ...options
     };
 
+    // We subscribe to our own eventEmitter so that state signal will be updated with debounce settings of the emitter
+    this.stateChangeEventSubscription = this.monitor().subscribe(state => {
+      this.stateSignal.set(state);
+    });
+
     this.checkNetworkState();
     this.checkInternetState();
   }
@@ -163,12 +179,12 @@ export class ConnectionService implements OnDestroy {
     }
 
     if (this.serviceOptions.enableHeartbeat) {
-      this.httpSubscription = timer(0, this.serviceOptions.heartbeatInterval)
+      this.httpSubscription = timer(0, this.serviceOptions.heartbeatInterval, this.scheduler)
         .pipe(
           switchMap(() => this.serviceOptions.heartbeatExecutor(this.serviceOptions)),
           retry({
             delay: () =>
-              timer(this.serviceOptions.heartbeatRetryInterval).pipe(
+              timer(this.serviceOptions.heartbeatRetryInterval, this.scheduler).pipe(
                 tap(() => {
                   this.currentState.hasInternetAccess = false;
                   this.emitEvent();
@@ -202,12 +218,12 @@ export class ConnectionService implements OnDestroy {
   }
 
   private emitEvent() {
-    this.stateChangeEventEmitter.emit(this.currentState);
-    this.stateSignal.set({...this.currentState});
+    this.stateChangeEventEmitter.emit({...this.currentState});
   }
 
   ngOnDestroy(): void {
     try {
+      this.stateChangeEventSubscription.unsubscribe();
       this.offlineSubscription.unsubscribe();
       this.onlineSubscription.unsubscribe();
       this.httpSubscription.unsubscribe();
@@ -224,12 +240,12 @@ export class ConnectionService implements OnDestroy {
   monitor(reportCurrentState = true): Observable<ConnectionState> {
     return reportCurrentState ?
       this.stateChangeEventEmitter.pipe(
-        debounceTime(300),
-        startWith(this.currentState),
+        debounceTime(300, this.scheduler),
+        startWith({...this.currentState})
       )
       :
       this.stateChangeEventEmitter.pipe(
-        debounceTime(300)
+        debounceTime(300, this.scheduler)
       );
   }
 
