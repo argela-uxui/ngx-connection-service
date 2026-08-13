@@ -33,6 +33,7 @@ Please use following table to determine suitable library version for your Angula
 | 17.0.x                           | 17.1.0            |
 | 18.0.x                           | 18.1.2            |
 | 19.0.x                           | 19.2.25           |
+| 20.0.x                           | 20.3.27           |
 ## Usage
 
 - Import `ConnectionServiceModule` in your `app.module.ts`.
@@ -222,18 +223,19 @@ export class AppComponent {
 
 | Package group | Previous range | Current range | Decision |
 |---------------|----------------|---------------|----------|
-| Angular runtime (`@angular/*`) | `^18.2.14` | `^19.2.25` | Upgraded to latest `19.x` runtime patches. |
-| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `18.x` | `19.x` | Upgraded to latest Angular 19 tooling patches. |
-| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `18.x` | Angular-eslint `19.8.1` + latest ESLint 9-compatible companions | Upgraded to latest Angular 19-compatible lint toolchain. |
-| Type defs (`@types/node`, `@types/jasmine`) | Node 18 / older Jasmine types | Latest Node/Jasmine types compatible with current toolchain | Upgraded within Angular 19 constraints. |
+| Angular runtime (`@angular/*`) | `^19.2.25` | `^20.3.27` | Upgraded to latest `20.x` runtime patches. |
+| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `19.x` | `20.x` | Upgraded to latest Angular 20 tooling patches. |
+| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `19.8.1` | Angular-eslint `20.7.0` + latest ESLint 9-compatible companions | Upgraded to latest Angular 20-compatible lint toolchain. |
+| Type defs (`@types/node`, `@types/jasmine`) | previous majors | Latest Node/Jasmine types compatible with current toolchain | Upgraded within Angular 20 constraints. |
 | Test UI reporter (`karma-jasmine-html-reporter`, `jasmine-core`) | `2.1.0` / `5.1.x` | `2.2.0` / `6.3.x` | Upgraded to latest compatible versions. |
 | E2E stack (`protractor`, `jasmine-spec-reporter`, `ts-node`) | present | removed | Fully removed from current tree. |
 
-### Blockers (pinned to latest Angular 19-compatible set)
+### Exceptions (latest-version policy with Angular 20 compatibility)
 
-- Angular advisories for `@angular/core`, `@angular/common`, and `@angular/compiler` may still require upgrading beyond Angular 19 according to `npm audit` output.
-- Build-chain advisories rooted in Angular 19 toolchain transitive deps (`@angular-devkit/build-angular`, `@angular/build`, `@angular/cli`) may require major Angular tooling upgrades.
-- Decision: keep runtime and build tooling pinned to latest available `19.x` and accept residual advisories until an Angular major upgrade is allowed.
+- `eslint` / `@eslint/js` remain on latest `9.x` because `angular-eslint@20.7.0` supports `^8.57.0 || ^9.0.0` and does not yet permit ESLint `10.x`.
+- `zone.js` is pinned to latest Angular 20-compatible `0.15.x` because `@angular/core@20.3.27` has peer `zone.js ~0.15.0`.
+- Angular runtime/build packages are intentionally pinned to latest `20.x` (not `21+`/`22+`) to maintain declared Angular 20 compatibility for this release line.
+- If a dependency cannot move to its global latest version without breaking Angular 20 peer constraints, it is pinned to the highest Angular 20-compatible release.
 
 ## License
 

@@ -1,6 +1,6 @@
 {
   "name": "ngx-connection-service",
-  "version": "19.0.0",
+  "version": "20.0.0",
   "description": "Detects whether browser has an active internet connection or not in Angular application.",
   "keywords": [
     "detect",
@@ -9,7 +9,7 @@
     "angular",
     "service",
     "HTTP",
-    "angular19",
+    "angular20",
     "internet-connection",
     "connectivity",
     "health-check"
@@ -25,8 +25,8 @@
   },
   "homepage": "https://github.com/argela-uxui/ngx-connection-service",
   "peerDependencies": {
-    "@angular/common": ">=19",
-    "@angular/core": ">=19",
+    "@angular/common": ">=20",
+    "@angular/core": ">=20",
     "rxjs": ">=7.4"
   }
 }
