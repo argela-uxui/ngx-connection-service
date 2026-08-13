@@ -40,6 +40,10 @@
     "publish": "npm run build_lib && cd dist/ngx-connection-service && npm publish"
   },
   "private": false,
+  "overrides": {
+    "less": "^4.8.1",
+    "uuid": "^11.1.1"
+  },
   "dependencies": {
     "@angular/animations": "^20.3.27",
     "@angular/common": "^20.3.27",
