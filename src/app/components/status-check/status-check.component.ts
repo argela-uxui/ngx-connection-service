@@ -1,21 +1,21 @@
-import {Component} from '@angular/core';
-import {ConnectionState, ConnectionService} from 'ngx-connection-service';
+import {Component, inject} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
+import {ConnectionService, ConnectionState} from 'ngx-connection-service';
 
 @Component({
-    selector: 'app-status-check',
-    templateUrl: './status-check.component.html',
-    styleUrls: ['./status-check.component.css'],
-    standalone: false
+  selector: 'app-status-check',
+  templateUrl: './status-check.component.html',
+  styleUrls: ['./status-check.component.css'],
+  imports: []
 })
 export class StatusCheckComponent {
 
-  currentState: ConnectionState;
+  protected readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
-    this.connectionService.monitor().subscribe((currentState: ConnectionState) => {
-      console.log(currentState);
-      this.currentState = currentState;
-    });
-  }
+  /**
+   * Reactive current connection state. Bridged from `monitor()` Observable via `toSignal` to demonstrate the
+   * dual Observable/Signal API surface of the service (the service also exposes `state` Signal directly).
+   */
+  readonly currentState = toSignal<ConnectionState | undefined>(this.connectionService.monitor());
 
 }

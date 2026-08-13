@@ -33,38 +33,51 @@ Please use following table to determine suitable library version for your Angula
 | 17.0.x                           | 17.1.0            |
 | 18.0.x                           | 18.2.14           |
 | 19.0.x                           | 19.2.25           |
+| 20.0.x                           | 20.3.27           |
 
 ## Usage
 
-- Import `ConnectionServiceModule` in your `app.module.ts`.
+- Register `provideConnectionService()` in your application's providers (standalone / `ApplicationConfig`).
 
 ```ts
-import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationConfig} from '@angular/core';
+import {provideConnectionService} from 'ngx-connection-service';
 
-import {AppComponent} from './app.component';
-import {ConnectionServiceModule} from 'ngx-connection-service';
-
-@NgModule({
-  declarations: [
-    AppComponent
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideConnectionService(),
   ],
-  imports: [
-    BrowserModule,
-    ConnectionServiceModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
-export class AppModule {
-}
+};
 ```
 
-- Inject `ConnectionService` in your component's constructor.
-- Subscribe to `monitor()` method to get push notification whenever internet connection status is changed.
+```ts
+import {bootstrapApplication} from '@angular/platform-browser';
+import {AppComponent} from './app/app.component';
+import {appConfig} from './app/app.config';
+
+bootstrapApplication(AppComponent, appConfig)
+  .catch(err => console.error(err));
+```
+
+> **Legacy `NgModule` setup:** `ConnectionServiceModule` is still available and works, but is **deprecated**.
+> Prefer `provideConnectionService()` above.
+>
+> ```ts
+> import {NgModule} from '@angular/core';
+> import {ConnectionServiceModule} from 'ngx-connection-service';
+>
+> @NgModule({
+>   imports: [ConnectionServiceModule],
+> })
+> export class AppModule {
+> }
+> ```
+
+- Inject `ConnectionService` using `inject()` (or the constructor) in your component.
+- Read the reactive `state` Signal, or subscribe to `monitor()` for push notifications whenever the connection status changes. Both APIs are kept in sync (dual API).
 
 ```ts
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ConnectionService } from 'ngx-connection-service';
 
 @Component({
@@ -73,23 +86,29 @@ import { ConnectionService } from 'ngx-connection-service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  hasNetworkConnection: boolean;
-  hasInternetAccess: boolean;
-  status: string;
+  private readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
+  // Signal API (recommended for modern, signal-based Angular apps)
+  readonly currentState = this.connectionService.state;
+
+  constructor() {
+    // Observable API (still fully supported)
     this.connectionService.monitor().subscribe(currentState => {
-      this.hasNetworkConnection = currentState.hasNetworkConnection;
-      this.hasInternetAccess = currentState.hasInternetAccess;
-      if (this.hasNetworkConnection && this.hasInternetAccess) {
-        this.status = 'ONLINE';
-      } else {
-        this.status = 'OFFLINE';
-      }
+      console.log(currentState);
     });
   }
 }
 
+```
+
+In the template you can then read the Signal directly:
+
+```html
+@if (currentState().hasNetworkConnection && currentState().hasInternetAccess) {
+  <span>ONLINE</span>
+} @else {
+  <span>OFFLINE</span>
+}
 ```
 
 ## Configuration
@@ -131,39 +150,22 @@ export interface ConnectionServiceOptions {
 }
 ```
 
-You should define a provider for `ConnectionServiceOptionsToken` in your module as follows;
+You should provide `ConnectionServiceOptions` via `provideConnectionService(options)` as follows;
 
 ```ts
-import {BrowserModule} from '@angular/platform-browser';
-import {NgModule} from '@angular/core';
+import {ApplicationConfig} from '@angular/core';
+import {ConnectionServiceOptions, provideConnectionService} from 'ngx-connection-service';
 
-import {AppComponent} from './app.component';
-import {ConnectionServiceModule, ConnectionServiceOptions, ConnectionServiceOptionsToken} from 'ngx-connection-service';
-
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    ConnectionServiceModule
-  ],
+export const appConfig: ApplicationConfig = {
   providers: [
-    {
-      provide: ConnectionServiceOptionsToken,
-      useValue: <ConnectionServiceOptions>{
-        enableHeartbeat: false,
-        heartbeatUrl: '/assets/ping.json',
-        requestMethod: 'get',
-        heartbeatInterval: 3000
-      }
-    }
+    provideConnectionService({
+      enableHeartbeat: false,
+      heartbeatUrl: '/assets/ping.json',
+      requestMethod: 'get',
+      heartbeatInterval: 3000
+    } satisfies ConnectionServiceOptions),
   ],
-  bootstrap: [AppComponent]
-})
-export class AppModule {
-}
-
+};
 ```
 
 ### Custom HeartBeat handling function
@@ -171,7 +173,7 @@ export class AppModule {
 You could use a callback function for handling heartBeat requests by defining `heartbeatExecutor` property in `ConnectionServiceOptions`;
 
 ```ts
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ConnectionService } from 'ngx-connection-service';
 import {Observable} from 'rxjs';
 
@@ -181,12 +183,11 @@ import {Observable} from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  hasNetworkConnection: boolean;
-  hasInternetAccess: boolean;
-  status: string;
+  private readonly connectionService = inject(ConnectionService);
 
-  constructor(private connectionService: ConnectionService) {
+  readonly currentState = this.connectionService.state;
 
+  constructor() {
     this.connectionService.updateOptions({
       heartbeatExecutor: options => new Observable<any>(subscriber => {
         if (Math.random() > .5) {
@@ -197,44 +198,73 @@ export class AppComponent {
         }
       })
     });
-
-    this.connectionService.monitor().subscribe(currentState => {
-      this.hasNetworkConnection = currentState.hasNetworkConnection;
-      this.hasInternetAccess = currentState.hasInternetAccess;
-      if (this.hasNetworkConnection && this.hasInternetAccess) {
-        this.status = 'ONLINE';
-      } else {
-        this.status = 'OFFLINE';
-      }
-    });
   }
 }
 
 ```
 
+## Testing your own code that uses `ConnectionService`
+
+`ConnectionService` uses RxJS `timer()`/`debounceTime()` internally (heartbeat polling, retry delay, and state
+debouncing). If you write unit tests that need to wait for these internal delays, you don't need `zone.js`'s
+`fakeAsync`/`tick`. Instead, provide `ConnectionServiceSchedulerToken` with an RxJS `TestScheduler`
+(from `rxjs/testing`) and advance its virtual clock synchronously:
+
+```ts
+import {TestBed} from '@angular/core/testing';
+import {TestScheduler} from 'rxjs/testing';
+import {ConnectionService, ConnectionServiceSchedulerToken} from 'ngx-connection-service';
+
+const scheduler = new TestScheduler(() => {});
+
+TestBed.configureTestingModule({
+  providers: [
+    ConnectionService,
+    {provide: ConnectionServiceSchedulerToken, useValue: scheduler},
+    // ...your other providers (e.g. provideHttpClient, provideHttpClientTesting)
+  ],
+});
+
+const service = TestBed.inject(ConnectionService);
+
+// Advance virtual time by 300ms synchronously instead of really waiting:
+scheduler.maxFrames = scheduler.frame + 300;
+scheduler.flush();
+```
+
+This keeps tests instantaneous and fully zoneless. `ConnectionServiceSchedulerToken` is optional — when not
+provided, the service defaults to RxJS's regular `asyncScheduler` (real timers), which is what you want in production.
+
 ## Changes
 
+- Zoneless: the demo application and library tests no longer depend on `zone.js`. The app uses `provideZonelessChangeDetection()`; tests use RxJS `TestScheduler` virtual time instead of `fakeAsync`/`tick`.
+- Standalone-first API: `provideConnectionService()` replaces `ConnectionServiceModule` for `ApplicationConfig` / `bootstrapApplication` setups. `ConnectionServiceModule` is kept for backward compatibility but is deprecated.
+- `ConnectionService` now exposes a reactive `state` Signal in addition to the existing `monitor()` Observable API (dual API, non-breaking).
+- Demo application converted to standalone components using the new `@if` control-flow syntax and `inject()`.
 - This version use https://api.ipify.org/ to determine Internet connection status
 - Removed dependency to "ssr-window" package
 
-## Security / Dependency Blockers
+## Security / Dependency Status
 
 ### Upgrade Matrix (current tree)
 
 | Package group | Previous range | Current range | Decision |
 |---------------|----------------|---------------|----------|
-| Angular runtime (`@angular/*`) | `^18.2.14` | `^19.2.25` | Upgraded to latest `19.x` runtime patches. |
-| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `18.x` | `19.x` | Upgraded to latest Angular 19 tooling patches. |
-| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `18.x` | Angular-eslint `19.8.1` + latest ESLint 9-compatible companions | Upgraded to latest Angular 19-compatible lint toolchain. |
-| Type defs (`@types/node`, `@types/jasmine`) | Node 18 / older Jasmine types | Latest Node/Jasmine types compatible with current toolchain | Upgraded within Angular 19 constraints. |
+| Angular runtime (`@angular/*`) | `^19.2.25` | `^20.3.27` | Upgraded to latest `20.x` runtime patches. |
+| Angular build chain (`@angular-devkit/build-angular`, `@angular/cli`, `@angular/compiler-cli`, `@angular/language-service`, `ng-packagr`) | `19.x` | `20.x` | Upgraded to latest Angular 20 tooling patches. |
+| Lint stack (`angular-eslint`, `eslint`, `@eslint/js`, `@typescript-eslint/*`, `typescript-eslint`) | Angular-eslint `19.8.1` | Angular-eslint `20.7.0` + latest ESLint 9-compatible companions | Upgraded to latest Angular 20-compatible lint toolchain. |
+| Type defs (`@types/node`, `@types/jasmine`) | previous majors | Latest Node/Jasmine types compatible with current toolchain | Upgraded within Angular 20 constraints. |
 | Test UI reporter (`karma-jasmine-html-reporter`, `jasmine-core`) | `2.1.0` / `5.1.x` | `2.2.0` / `6.3.x` | Upgraded to latest compatible versions. |
+| Audit remediations (`less`, `uuid`) | Vulnerable transitive versions | `less@^4.8.1`, `uuid@^11.1.1` via npm `overrides` | Upgraded to latest Angular 20-compatible transitive versions. |
 | E2E stack (`protractor`, `jasmine-spec-reporter`, `ts-node`) | present | removed | Fully removed from current tree. |
 
-### Blockers (pinned to latest Angular 19-compatible set)
+### Exceptions (latest-version policy with Angular 20 compatibility)
 
-- Angular advisories for `@angular/core`, `@angular/common`, and `@angular/compiler` may still require upgrading beyond Angular 19 according to `npm audit` output.
-- Build-chain advisories rooted in Angular 19 toolchain transitive deps (`@angular-devkit/build-angular`, `@angular/build`, `@angular/cli`) may require major Angular tooling upgrades.
-- Decision: keep runtime and build tooling pinned to latest available `19.x` and accept residual advisories until an Angular major upgrade is allowed.
+- `eslint` / `@eslint/js` remain on latest `9.x` because `angular-eslint@20.7.0` supports `^8.57.0 || ^9.0.0` and does not yet permit ESLint `10.x`.
+- `zone.js` has been **removed entirely**. The application and library now run zoneless via `provideZonelessChangeDetection()`; `zone.js` is only an optional peer of `@angular/core` and is not installed.
+- Angular runtime/build packages are intentionally pinned to latest `20.x` (not `21+`/`22+`) to maintain declared Angular 20 compatibility for this release line.
+- Remaining `npm audit` findings are `moderate` and rooted in `webpack-dev-server` via `@angular-devkit/build-angular`; the available fix requires upgrading toolchain major to `22.x`, which is outside this Angular 20 release line.
+- If a dependency cannot move to its global latest version without breaking Angular 20 peer constraints, it is pinned to the highest Angular 20-compatible release.
 
 ## License
 
