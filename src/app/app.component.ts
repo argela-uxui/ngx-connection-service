@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, signal} from '@angular/core';
 import {ConnectionService} from 'ngx-connection-service';
 import {Observable} from 'rxjs';
 import {StatusCheckComponent} from './components/status-check/status-check.component';
@@ -7,6 +7,7 @@ import {StatusCheckComponent} from './components/status-check/status-check.compo
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [StatusCheckComponent],
 })
 export class AppComponent {

@@ -16,6 +16,7 @@
     ],
     "useDefineForClassFields": false,
     "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "ngx-connection-service": [
         "dist/ngx-connection-service"
