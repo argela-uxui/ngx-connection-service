@@ -9,8 +9,7 @@
     "angular",
     "service",
     "HTTP",
-    "angular",
-    "angular17",
+    "angular18",
     "internet-connection",
     "connectivity",
     "health-check"
@@ -28,6 +27,6 @@
   "peerDependencies": {
     "@angular/common": ">=18",
     "@angular/core": ">=18",
-    "rxjs": ">=6.6"
+    "rxjs": ">=7.4"
   }
 }

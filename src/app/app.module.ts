@@ -17,12 +17,12 @@ import {StatusCheckComponent} from './components/status-check/status-check.compo
   providers: [
     {
       provide: ConnectionServiceOptionsToken,
-      useValue: <ConnectionServiceOptions>{
+      useValue: {
         enableHeartbeat: true,
         // heartbeatUrl: '/assets/ping.json',
         // requestMethod: 'get',
         // heartbeatInterval: 3000
-      }
+      } as ConnectionServiceOptions
     }
   ],
   bootstrap: [AppComponent]

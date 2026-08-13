@@ -1,11 +1,10 @@
-import {getTestBed, inject, TestBed} from '@angular/core/testing';
+import {TestBed} from '@angular/core/testing';
 
 import {ConnectionService} from './connection-service.service';
 import {HttpTestingController, provideHttpClientTesting} from '@angular/common/http/testing';
 import {provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
 
 describe('ConnectionServiceService', () => {
-  let injector: TestBed;
   let service: ConnectionService;
   let httpMock: HttpTestingController;
 
@@ -18,17 +17,16 @@ describe('ConnectionServiceService', () => {
         provideHttpClientTesting()
       ]
     });
-    injector = getTestBed();
-    service = injector.get(ConnectionService);
-    httpMock = injector.get(HttpTestingController);
+    service = TestBed.inject(ConnectionService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
     httpMock.verify();
   });
 
-  it('should be created', inject([ConnectionService], (testedService: ConnectionService) => {
-    expect(testedService).toBeTruthy();
-  }));
+  it('should be created', () => {
+    expect(service).toBeTruthy();
+  });
 
 });

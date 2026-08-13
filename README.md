@@ -31,7 +31,7 @@ Please use following table to determine suitable library version for your Angula
 | 15.0.x                           | 15.2.9            |
 | 16.0.x                           | 16.1.8            |
 | 17.0.x                           | 17.1.0            |
-| 18.0.x                           | 18.1.2            |
+| 18.0.x                           | 18.2.14           |
 
 ## Usage
 
@@ -189,7 +189,7 @@ export class AppComponent {
     this.connectionService.updateOptions({
       heartbeatExecutor: options => new Observable<any>(subscriber => {
         if (Math.random() > .5) {
-          subscriber.next();
+          subscriber.next(true);
           subscriber.complete();
         } else {
           throw new Error('Connection error');
