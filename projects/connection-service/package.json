@@ -1,6 +1,6 @@
 {
   "name": "ngx-connection-service",
-  "version": "20.0.0",
+  "version": "20.0.1",
   "description": "Detects whether browser has an active internet connection or not in Angular application.",
   "keywords": [
     "detect",
