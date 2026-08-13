@@ -1,16 +1,22 @@
-import {async, ComponentFixture, TestBed} from '@angular/core/testing';
+import {ComponentFixture, TestBed, waitForAsync} from '@angular/core/testing';
+import {provideHttpClient} from '@angular/common/http';
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 
-import { StatusCheckComponent } from './status-check.component';
+import {StatusCheckComponent} from './status-check.component';
 
 describe('StatusCheckComponent', () => {
   let component: StatusCheckComponent;
   let fixture: ComponentFixture<StatusCheckComponent>;
 
-  beforeEach(async(() => {
+  beforeEach(waitForAsync(() => {
     TestBed.configureTestingModule({
-      declarations: [ StatusCheckComponent ]
+      declarations: [StatusCheckComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     })
-    .compileComponents();
+      .compileComponents();
   }));
 
   beforeEach(() => {
