@@ -1,7 +1,7 @@
 import {DOCUMENT, isPlatformBrowser} from '@angular/common';
 import {EventEmitter, Inject, Injectable, InjectionToken, OnDestroy, Optional, PLATFORM_ID} from '@angular/core';
 import {fromEvent, Observable, Subscription, timer} from 'rxjs';
-import {debounceTime, delay, retryWhen, startWith, switchMap, tap} from 'rxjs/operators';
+import {debounceTime, retry, startWith, switchMap, tap} from 'rxjs/operators';
 import {HttpClient} from '@angular/common/http';
 
 /**
@@ -53,7 +53,7 @@ export interface ConnectionServiceOptions {
 /**
  * InjectionToken for specifing ConnectionService options.
  */
-export const ConnectionServiceOptionsToken: InjectionToken<ConnectionServiceOptions> = new InjectionToken('ConnectionServiceOptionsToken');
+export const ConnectionServiceOptionsToken = new InjectionToken<ConnectionServiceOptions>('ConnectionServiceOptionsToken');
 
 /**
  * Minimal Window-like object used when running outside the browser (e.g. Angular Universal SSR).
@@ -62,8 +62,10 @@ function createWindowStub(): Window {
   return {
     navigator: {onLine: true},
     addEventListener() {
+      // no-op: online/offline events are unavailable outside the browser
     },
     removeEventListener() {
+      // no-op: online/offline events are unavailable outside the browser
     },
   } as unknown as Window;
 }
@@ -71,7 +73,7 @@ function createWindowStub(): Window {
 /**
  * Resolves the Window object for browser use, or a stub when Window is not available (SSR).
  */
-function resolveWindow(documentRef: Document, platformId: Object): Window {
+function resolveWindow(documentRef: Document, platformId: object): Window {
   if (isPlatformBrowser(platformId)) {
     const win = documentRef.defaultView || (typeof window !== 'undefined' ? window : null);
     if (win) {
@@ -121,7 +123,7 @@ export class ConnectionService implements OnDestroy {
   constructor(
     private http: HttpClient,
     @Inject(DOCUMENT) documentRef: Document,
-    @Inject(PLATFORM_ID) platformId: Object,
+    @Inject(PLATFORM_ID) platformId: object,
     @Inject(ConnectionServiceOptionsToken) @Optional() options: ConnectionServiceOptions
   ) {
     this.windowRef = resolveWindow(documentRef, platformId);
@@ -152,18 +154,17 @@ export class ConnectionService implements OnDestroy {
       this.httpSubscription = timer(0, this.serviceOptions.heartbeatInterval)
         .pipe(
           switchMap(() => this.serviceOptions.heartbeatExecutor(this.serviceOptions)),
-          retryWhen(errors =>
-            errors.pipe(
-              tap(val => {
-                this.currentState.hasInternetAccess = false;
-                this.emitEvent();
-              }),
-              // restart after 5 seconds
-              delay(this.serviceOptions.heartbeatRetryInterval)
-            )
-          )
+          retry({
+            delay: () =>
+              timer(this.serviceOptions.heartbeatRetryInterval).pipe(
+                tap(() => {
+                  this.currentState.hasInternetAccess = false;
+                  this.emitEvent();
+                })
+              )
+          })
         )
-        .subscribe(result => {
+        .subscribe(() => {
           this.currentState.hasInternetAccess = true;
           this.emitEvent();
         });
@@ -197,7 +198,8 @@ export class ConnectionService implements OnDestroy {
       this.offlineSubscription.unsubscribe();
       this.onlineSubscription.unsubscribe();
       this.httpSubscription.unsubscribe();
-    } catch (e) {
+    } catch {
+      // subscriptions may already be cleared
     }
   }
 

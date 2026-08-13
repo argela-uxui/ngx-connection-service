@@ -2,22 +2,20 @@
   "compileOnSave": false,
   "compilerOptions": {
     "baseUrl": "./",
-    "module": "esnext",
     "outDir": "./dist/out-tsc",
-    "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
-    "moduleResolution": "node",
-    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
     "target": "ES2022",
-    "typeRoots": [
-      "node_modules/@types"
-    ],
+    "module": "ES2022",
     "lib": [
-      "es2017",
+      "ES2022",
       "dom"
     ],
+    "useDefineForClassFields": false,
+    "esModuleInterop": true,
     "paths": {
       "ngx-connection-service": [
         "dist/ngx-connection-service"
@@ -25,7 +23,6 @@
       "ngx-connection-service/*": [
         "dist/ngx-connection-service/*"
       ]
-    },
-    "useDefineForClassFields": false
+    }
   }
 }
